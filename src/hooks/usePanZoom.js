@@ -1,15 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 
-export const usePanZoom = (canvasRef, containerRef, { imageRotation = 0, rotationCenter = null } = {}) => {
+export const usePanZoom = (canvasRef, containerRef) => {
   const [viewTransform, setViewTransform] = useState({ scale: 1, offsetX: 0, offsetY: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [spacePressed, setSpacePressed] = useState(false);
   const [panStart, setPanStart] = useState(null);
   const [lastPanOffset, setLastPanOffset] = useState({ x: 0, y: 0 });
-
-  const rad = imageRotation * Math.PI / 180;
-  const cx = rotationCenter?.x || 0;
-  const cy = rotationCenter?.y || 0;
 
   const screenToImage = useCallback((screenX, screenY) => {
     const canvas = canvasRef.current;
@@ -19,42 +15,18 @@ export const usePanZoom = (canvasRef, containerRef, { imageRotation = 0, rotatio
     const canvasX = screenX - rect.left;
     const canvasY = screenY - rect.top;
 
-    // Undo pan+scale
-    let imageX = (canvasX - viewTransform.offsetX) / viewTransform.scale;
-    let imageY = (canvasY - viewTransform.offsetY) / viewTransform.scale;
-
-    // Undo rotation around rotationCenter
-    if (rad !== 0) {
-      const dx = imageX - cx;
-      const dy = imageY - cy;
-      const cosR = Math.cos(-rad);
-      const sinR = Math.sin(-rad);
-      imageX = cx + dx * cosR - dy * sinR;
-      imageY = cy + dx * sinR + dy * cosR;
-    }
+    const imageX = (canvasX - viewTransform.offsetX) / viewTransform.scale;
+    const imageY = (canvasY - viewTransform.offsetY) / viewTransform.scale;
 
     return { x: imageX, y: imageY };
-  }, [viewTransform, canvasRef, rad, cx, cy]);
+  }, [viewTransform, canvasRef]);
 
   const imageToScreen = useCallback((imageX, imageY) => {
-    let x = imageX;
-    let y = imageY;
-
-    // Apply rotation around rotationCenter
-    if (rad !== 0) {
-      const dx = x - cx;
-      const dy = y - cy;
-      const cosR = Math.cos(rad);
-      const sinR = Math.sin(rad);
-      x = cx + dx * cosR - dy * sinR;
-      y = cy + dx * sinR + dy * cosR;
-    }
-
     return {
-      x: x * viewTransform.scale + viewTransform.offsetX,
-      y: y * viewTransform.scale + viewTransform.offsetY
+      x: imageX * viewTransform.scale + viewTransform.offsetX,
+      y: imageY * viewTransform.scale + viewTransform.offsetY
     };
-  }, [viewTransform, rad, cx, cy]);
+  }, [viewTransform]);
 
   const zoomToROI = useCallback((roiRect) => {
     if (!containerRef.current || !roiRect) return;
@@ -103,7 +75,26 @@ export const usePanZoom = (canvasRef, containerRef, { imageRotation = 0, rotatio
     setPanStart(null);
   }, []);
 
-  // Keyboard handlers for space bar panning
+  const zoomAtPoint = useCallback((factor, canvasX, canvasY) => {
+    setViewTransform(prev => {
+      const newScale = Math.min(5, Math.max(0.1, prev.scale * factor));
+      const ratio = newScale / prev.scale;
+      return {
+        scale: newScale,
+        offsetX: canvasX - (canvasX - prev.offsetX) * ratio,
+        offsetY: canvasY - (canvasY - prev.offsetY) * ratio,
+      };
+    });
+  }, []);
+
+  const zoomAtCenter = useCallback((factor) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    zoomAtPoint(factor, cx, cy);
+  }, [canvasRef, zoomAtPoint]);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.code === 'Space' && !spacePressed) {
@@ -135,5 +126,6 @@ export const usePanZoom = (canvasRef, containerRef, { imageRotation = 0, rotatio
     isPanning, spacePressed,
     screenToImage, imageToScreen, zoomToROI,
     startPan, updatePan, endPan,
+    zoomAtPoint, zoomAtCenter,
   };
 };

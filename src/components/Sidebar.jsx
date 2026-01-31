@@ -139,7 +139,15 @@ const Sidebar = ({
           <input
             type="range" min="-10" max="10" step="0.1"
             value={imageRotation}
-            onChange={(e) => setImageRotation(parseFloat(e.target.value))}
+            onChange={(e) => {
+              const newVal = parseFloat(e.target.value);
+              if (e.nativeEvent.shiftKey) {
+                const diff = (newVal - imageRotation) * 0.2;
+                setImageRotation(Math.max(-10, Math.min(10, imageRotation + diff)));
+              } else {
+                setImageRotation(newVal);
+              }
+            }}
             style={{ width: '100%', accentColor: '#58a6ff' }}
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
@@ -160,7 +168,7 @@ const Sidebar = ({
             )}
           </div>
           <div style={{ fontSize: '10px', color: '#6e7681', marginTop: '4px' }}>
-            Ctrl + drag to rotate
+            Ctrl + drag to rotate | + Shift for precision
           </div>
         </section>
       )}

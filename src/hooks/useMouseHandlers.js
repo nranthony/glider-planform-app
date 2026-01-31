@@ -18,6 +18,8 @@ export const useMouseHandlers = ({
   draggingJoint, setDraggingJoint,
   // Rotation
   imageRotation, setImageRotation,
+  // Zoom
+  zoomAtPoint,
 }) => {
   // Ctrl+drag rotation state
   const isRotatingRef = useRef(false);
@@ -112,7 +114,8 @@ export const useMouseHandlers = ({
     // Handle rotation drag
     if (isRotatingRef.current) {
       const dy = screenY - rotateStartRef.current.y;
-      const newRotation = Math.max(-10, Math.min(10, rotateStartRef.current.rotation + dy * 0.1));
+      const sensitivity = e.shiftKey ? 0.02 : 0.1;
+      const newRotation = Math.max(-10, Math.min(10, rotateStartRef.current.rotation + dy * sensitivity));
       setImageRotation(newRotation);
       return;
     }
@@ -188,9 +191,21 @@ export const useMouseHandlers = ({
     }
   }, [updatePan, handleMouseMove]);
 
+  const handleWheel = useCallback((e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const rect = canvasRef.current.getBoundingClientRect();
+      const canvasX = e.clientX - rect.left;
+      const canvasY = e.clientY - rect.top;
+      const factor = e.deltaY < 0 ? 1.1 : 0.9;
+      zoomAtPoint(factor, canvasX, canvasY);
+    }
+  }, [canvasRef, zoomAtPoint]);
+
   return {
     handleMouseDown, handleMouseMove, handleMouseUp,
     handleTouchStart, handleTouchMove, handleTouchEnd: handleMouseUp,
+    handleWheel,
     getMidlineHandleY,
   };
 };

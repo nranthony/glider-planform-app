@@ -76,12 +76,14 @@ const PlanformAnalyzer = () => {
     isPanning, spacePressed,
     screenToImage, imageToScreen, zoomToROI,
     startPan, updatePan, endPan,
-  } = usePanZoom(canvasRef, containerRef, { imageRotation, rotationCenter });
+    zoomAtPoint, zoomAtCenter,
+  } = usePanZoom(canvasRef, containerRef);
 
   // Mouse/touch handlers
   const {
     handleMouseDown, handleMouseMove, handleMouseUp,
     handleTouchStart, handleTouchMove, handleTouchEnd,
+    handleWheel,
     getMidlineHandleY,
   } = useMouseHandlers({
     canvasRef, containerRef,
@@ -94,6 +96,7 @@ const PlanformAnalyzer = () => {
     joints, setJoints, currentJoint, currentJointIndex, setCurrentJointIndex,
     draggingJoint, setDraggingJoint,
     imageRotation, setImageRotation,
+    zoomAtPoint,
   });
 
   // Canvas rendering
@@ -279,6 +282,7 @@ const PlanformAnalyzer = () => {
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
+              onWheel={handleWheel}
               style={{
                 cursor: spacePressed || isPanning ? 'grab' :
                         stage === STAGES.ROI ? 'crosshair' :
@@ -298,7 +302,7 @@ const PlanformAnalyzer = () => {
               padding: '4px', borderRadius: '6px', border: '1px solid #30363d',
             }}>
               <button
-                onClick={() => setViewTransform(v => ({ ...v, scale: Math.max(0.1, v.scale * 0.8) }))}
+                onClick={() => zoomAtCenter(0.8)}
                 style={{
                   width: '32px', height: '32px', background: 'transparent', border: 'none',
                   borderRadius: '4px', color: '#e6edf3', cursor: 'pointer', fontSize: '16px',
@@ -308,7 +312,7 @@ const PlanformAnalyzer = () => {
                 {(viewTransform.scale * 100).toFixed(0)}%
               </span>
               <button
-                onClick={() => setViewTransform(v => ({ ...v, scale: Math.min(5, v.scale * 1.25) }))}
+                onClick={() => zoomAtCenter(1.25)}
                 style={{
                   width: '32px', height: '32px', background: 'transparent', border: 'none',
                   borderRadius: '4px', color: '#e6edf3', cursor: 'pointer', fontSize: '16px',

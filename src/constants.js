@@ -65,7 +65,7 @@ export const DARK_COLORS = {
   jointCurrent: '#cc0000',
   jointFill: 'rgba(255, 255, 255, 0.1)',
   jointFillDrag: 'rgba(255, 255, 255, 0.3)',
-  labelText: '#222222',
+  labelText: '#1a3a6a',
   labelShadow: 'rgba(255, 255, 255, 0.8)',
   roi: '#006644',
 };
@@ -85,7 +85,7 @@ export const LIGHT_COLORS = {
   jointCurrent: '#ff6666',
   jointFill: 'rgba(0, 0, 0, 0.1)',
   jointFillDrag: 'rgba(0, 0, 0, 0.3)',
-  labelText: '#ffffff',
+  labelText: '#88bbff',
   labelShadow: 'rgba(0, 0, 0, 0.8)',
   roi: '#44ffaa',
 };

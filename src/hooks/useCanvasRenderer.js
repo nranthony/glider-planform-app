@@ -189,12 +189,13 @@ export const useCanvasRenderer = ({
         ctx.arc(screenPos.x, screenPos.y, radius - 2 * uiScale, 0, Math.PI * 2);
         ctx.fill();
 
+        const labelYOffset = jointDef?.midline ? -radius - 2 * uiScale : radius + 12 * uiScale;
         ctx.font = `${11 * uiScale}px monospace`;
         ctx.textAlign = 'left';
         ctx.fillStyle = colors.labelShadow;
-        ctx.fillText(jointDef?.name || id, screenPos.x + radius + 4 * uiScale + 1, screenPos.y + 4 * uiScale + 1);
+        ctx.fillText(jointDef?.name || id, screenPos.x + radius + 4 * uiScale + 1, screenPos.y + labelYOffset + 1);
         ctx.fillStyle = colors.labelText;
-        ctx.fillText(jointDef?.name || id, screenPos.x + radius + 4 * uiScale, screenPos.y + 4 * uiScale);
+        ctx.fillText(jointDef?.name || id, screenPos.x + radius + 4 * uiScale, screenPos.y + labelYOffset);
 
         if (showMirrored && jointDef?.side === 'right') {
           const mirrored = mirrorPoint(pos);
