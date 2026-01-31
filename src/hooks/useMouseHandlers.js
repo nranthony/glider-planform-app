@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { STAGES, SORTED_JOINTS } from '../constants';
 import { distance } from '../utils';
 
@@ -16,7 +16,12 @@ export const useMouseHandlers = ({
   // Joints
   joints, setJoints, currentJoint, currentJointIndex, setCurrentJointIndex,
   draggingJoint, setDraggingJoint,
+  // Rotation
+  imageRotation, setImageRotation,
 }) => {
+  // Ctrl+drag rotation state
+  const isRotatingRef = useRef(false);
+  const rotateStartRef = useRef({ y: 0, rotation: 0 });
   const getMidlineHandleY = useCallback(() => {
     if (!containerRef.current) return 30;
     return containerRef.current.clientHeight - 25;
@@ -32,6 +37,13 @@ export const useMouseHandlers = ({
 
     if (spacePressed) {
       startPan(screenX, screenY);
+      return;
+    }
+
+    // Ctrl+drag to rotate
+    if (e.ctrlKey || e.metaKey) {
+      isRotatingRef.current = true;
+      rotateStartRef.current = { y: screenY, rotation: imageRotation };
       return;
     }
 
@@ -88,7 +100,7 @@ export const useMouseHandlers = ({
       midlineX, scaleBar, annotationScale, viewTransform.scale, joints,
       currentJoint, currentJointIndex, getMidlineHandleY,
       setRoiDrag, setDraggingMidline, setMidlineX, setDraggingScale,
-      setDraggingJoint, setJoints, setCurrentJointIndex]);
+      setDraggingJoint, setJoints, setCurrentJointIndex, imageRotation]);
 
   const handleMouseMove = useCallback((e) => {
     const screenX = e.clientX;
@@ -96,6 +108,14 @@ export const useMouseHandlers = ({
     const imgCoords = screenToImage(screenX, screenY);
 
     if (updatePan(screenX, screenY)) return;
+
+    // Handle rotation drag
+    if (isRotatingRef.current) {
+      const dy = screenY - rotateStartRef.current.y;
+      const newRotation = Math.max(-10, Math.min(10, rotateStartRef.current.rotation + dy * 0.1));
+      setImageRotation(newRotation);
+      return;
+    }
 
     if (stage === STAGES.ROI && roiDrag) {
       setRoiDrag(prev => ({ ...prev, currentX: imgCoords.x, currentY: imgCoords.y }));
@@ -110,9 +130,14 @@ export const useMouseHandlers = ({
       setJoints(prev => ({ ...prev, [draggingJoint]: imgCoords }));
     }
   }, [screenToImage, updatePan, stage, roiDrag, draggingMidline, draggingScale, draggingJoint,
-      scaleBar.x, setRoiDrag, setMidlineX, setScaleBar, setJoints]);
+      scaleBar.x, setRoiDrag, setMidlineX, setScaleBar, setJoints, setImageRotation]);
 
   const handleMouseUp = useCallback(() => {
+    if (isRotatingRef.current) {
+      isRotatingRef.current = false;
+      return;
+    }
+
     if (isPanning) {
       endPan();
       return;

@@ -42,7 +42,7 @@ export const STAGES = {
 export const SORTED_JOINTS = [...TOPOLOGY.joints].sort((a, b) => a.order - b.order);
 
 export const STAGE_CONFIG = {
-  [STAGES.LOAD]: { title: 'Load Image', instruction: 'Upload a planiform image to begin', color: '#888' },
+  [STAGES.LOAD]: { title: 'Load Image', instruction: 'Upload a planform image to begin', color: '#888' },
   [STAGES.ROI]: { title: 'Select ROI', instruction: 'Click and drag to select the region of interest', color: '#00aa66' },
   [STAGES.MIDLINE]: { title: 'Set Midline', instruction: 'Drag the handle at bottom to position midline', color: '#cc4444' },
   [STAGES.SCALE]: { title: 'Adjust Scale', instruction: 'Drag scale bar to a known reference length', color: '#aa8800' },

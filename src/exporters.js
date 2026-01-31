@@ -74,6 +74,7 @@ export const calculateMeasurements = (allJoints, scaleBar) => {
 export const exportAnnotatedImage = ({
   roi, imageRef, midlineX, scaleBar, joints, colors,
   getAllJointsFn, mirrorPoint, showMirrored, annotationScale,
+  imageRotation, rotationCenter,
 }) => {
   if (!roi || !imageRef.current) return null;
 
@@ -84,7 +85,22 @@ export const exportAnnotatedImage = ({
   exportCanvas.width = roi.width;
   exportCanvas.height = roi.height;
 
+  // Apply rotation around the rotation center (adjusted for ROI offset)
+  const rad = (imageRotation || 0) * Math.PI / 180;
+  if (rad !== 0 && rotationCenter) {
+    const cx = rotationCenter.x - roi.x;
+    const cy = rotationCenter.y - roi.y;
+    ctx.translate(cx, cy);
+    ctx.rotate(rad);
+    ctx.translate(-cx, -cy);
+  }
+
   ctx.drawImage(img, roi.x, roi.y, roi.width, roi.height, 0, 0, roi.width, roi.height);
+
+  // Reset rotation for annotations (they are already in rotated image space)
+  if (rad !== 0) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
 
   const uiScale = annotationScale;
   const offsetX = -roi.x;
@@ -186,7 +202,7 @@ export const exportAnnotatedImage = ({
     }
   });
 
-  return exportCanvas.toDataURL('image/png');
+  return exportCanvas.toDataURL('image/jpeg', 0.95);
 };
 
 export const downloadJSON = ({
@@ -215,16 +231,23 @@ export const downloadJSON = ({
     angles: measurements.angles,
   };
 
-  if (exportWithImage) {
-    data.annotatedImage = exportAnnotatedImageFn();
-  }
-
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'planiform_measurements.json';
+  a.download = 'planform_measurements.json';
   a.click();
+
+  // Save annotated image as separate JPEG file
+  if (exportWithImage) {
+    const imageData = exportAnnotatedImageFn();
+    if (imageData) {
+      const imgLink = document.createElement('a');
+      imgLink.href = imageData;
+      imgLink.download = 'planform_annotated.jpg';
+      imgLink.click();
+    }
+  }
 };
 
 export const downloadCSV = ({
@@ -242,7 +265,7 @@ export const downloadCSV = ({
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'planiform_measurements.csv';
+  a.download = 'planform_measurements.csv';
   a.click();
 
   if (exportWithImage) {
@@ -250,7 +273,7 @@ export const downloadCSV = ({
     if (imageData) {
       const imgLink = document.createElement('a');
       imgLink.href = imageData;
-      imgLink.download = 'planiform_annotated.png';
+      imgLink.download = 'planform_annotated.jpg';
       imgLink.click();
     }
   }

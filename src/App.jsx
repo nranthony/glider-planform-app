@@ -7,7 +7,7 @@ import { getAllJoints, calculateMeasurements, exportAnnotatedImage, downloadJSON
 import Sidebar from './components/Sidebar';
 import MeasurementsPanel from './components/MeasurementsPanel';
 
-const PlaniformAnalyzer = () => {
+const PlanformAnalyzer = () => {
   // Core state
   const [image, setImage] = useState(null);
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
@@ -35,6 +35,7 @@ const PlaniformAnalyzer = () => {
   const [showMirrored, setShowMirrored] = useState(true);
   const [darkAnnotations, setDarkAnnotations] = useState(true);
   const [exportWithImage, setExportWithImage] = useState(true);
+  const [imageRotation, setImageRotation] = useState(0);
 
   // Refs
   const canvasRef = useRef(null);
@@ -44,6 +45,17 @@ const PlaniformAnalyzer = () => {
 
   const currentJoint = SORTED_JOINTS[currentJointIndex];
   const colors = darkAnnotations ? DARK_COLORS : LIGHT_COLORS;
+
+  // Rotation center: midline X, vertical center of ROI. Fallback to image center.
+  const rotationCenter = useMemo(() => {
+    if (midlineX !== null && roi) {
+      return { x: midlineX, y: roi.y + roi.height / 2 };
+    }
+    if (imageDimensions.width > 0) {
+      return { x: imageDimensions.width / 2, y: imageDimensions.height / 2 };
+    }
+    return null;
+  }, [midlineX, roi, imageDimensions]);
 
   const mirrorPoint = useCallback((point) => {
     if (midlineX === null || !point) return null;
@@ -64,7 +76,7 @@ const PlaniformAnalyzer = () => {
     isPanning, spacePressed,
     screenToImage, imageToScreen, zoomToROI,
     startPan, updatePan, endPan,
-  } = usePanZoom(canvasRef, containerRef);
+  } = usePanZoom(canvasRef, containerRef, { imageRotation, rotationCenter });
 
   // Mouse/touch handlers
   const {
@@ -81,6 +93,7 @@ const PlaniformAnalyzer = () => {
     scaleBar, draggingScale, setDraggingScale,
     joints, setJoints, currentJoint, currentJointIndex, setCurrentJointIndex,
     draggingJoint, setDraggingJoint,
+    imageRotation, setImageRotation,
   });
 
   // Canvas rendering
@@ -92,6 +105,7 @@ const PlaniformAnalyzer = () => {
     annotationScale, stage, showMirrored, spacePressed, isPanning,
     colors, darkAnnotations,
     getAllJoints: getAllJointsFn, imageToScreen, mirrorPoint, getMidlineHandleY,
+    imageRotation, rotationCenter,
   });
 
   // Image upload
@@ -110,6 +124,7 @@ const PlaniformAnalyzer = () => {
           setMidlineX(null);
           setJoints({});
           setCurrentJointIndex(0);
+          setImageRotation(0);
 
           if (containerRef.current) {
             const container = containerRef.current;
@@ -134,8 +149,9 @@ const PlaniformAnalyzer = () => {
     return exportAnnotatedImage({
       roi, imageRef, midlineX, scaleBar, joints, colors,
       getAllJointsFn, mirrorPoint, showMirrored, annotationScale,
+      imageRotation, rotationCenter,
     });
-  }, [roi, midlineX, scaleBar, joints, colors, getAllJointsFn, mirrorPoint, showMirrored, annotationScale]);
+  }, [roi, midlineX, scaleBar, joints, colors, getAllJointsFn, mirrorPoint, showMirrored, annotationScale, imageRotation, rotationCenter]);
 
   const handleExportJSON = () => {
     const allJoints = getAllJointsFn();
@@ -181,7 +197,7 @@ const PlaniformAnalyzer = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#58a6ff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            Planiform Analyzer
+            Planform Analyzer
           </h1>
 
           <div style={{
@@ -198,7 +214,7 @@ const PlaniformAnalyzer = () => {
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <span style={{ fontSize: '11px', color: '#8b949e', marginRight: '8px' }}>
-            Space + drag to pan
+            Space + drag to pan | Ctrl + drag to rotate
           </span>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -238,6 +254,7 @@ const PlaniformAnalyzer = () => {
           exportWithImage={exportWithImage} setExportWithImage={setExportWithImage}
           currentJoint={currentJoint}
           onExportJSON={handleExportJSON} onExportCSV={handleExportCSV}
+          imageRotation={imageRotation} setImageRotation={setImageRotation}
         />
 
         {/* Main Canvas */}
@@ -250,7 +267,7 @@ const PlaniformAnalyzer = () => {
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               justifyContent: 'center', height: '100%', color: '#8b949e',
             }}>
-              <p style={{ fontSize: '14px' }}>Load a planiform image to begin analysis</p>
+              <p style={{ fontSize: '14px' }}>Load a planform image to begin analysis</p>
             </div>
           ) : (
             <canvas
@@ -314,4 +331,4 @@ const PlaniformAnalyzer = () => {
   );
 };
 
-export default PlaniformAnalyzer;
+export default PlanformAnalyzer;

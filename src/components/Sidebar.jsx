@@ -10,6 +10,7 @@ const Sidebar = ({
   showMirrored, setShowMirrored,
   exportWithImage, setExportWithImage,
   currentJoint, onExportJSON, onExportCSV,
+  imageRotation, setImageRotation,
 }) => {
   const stageConfig = {
     ...STAGE_CONFIG,
@@ -129,6 +130,41 @@ const Sidebar = ({
         </section>
       )}
 
+      {/* Image Rotation Slider */}
+      {stage !== STAGES.LOAD && (
+        <section style={{ marginBottom: '20px' }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#8b949e' }}>
+            Image Rotation
+          </h3>
+          <input
+            type="range" min="-10" max="10" step="0.1"
+            value={imageRotation}
+            onChange={(e) => setImageRotation(parseFloat(e.target.value))}
+            style={{ width: '100%', accentColor: '#58a6ff' }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+            <span style={{ fontSize: '11px', color: '#8b949e' }}>
+              {imageRotation.toFixed(1)}&deg;
+            </span>
+            {imageRotation !== 0 && (
+              <button
+                onClick={() => setImageRotation(0)}
+                style={{
+                  padding: '2px 8px', background: 'transparent',
+                  border: '1px solid #30363d', borderRadius: '4px',
+                  color: '#8b949e', cursor: 'pointer', fontFamily: 'inherit', fontSize: '10px',
+                }}
+              >
+                Reset
+              </button>
+            )}
+          </div>
+          <div style={{ fontSize: '10px', color: '#6e7681', marginTop: '4px' }}>
+            Ctrl + drag to rotate
+          </div>
+        </section>
+      )}
+
       {/* Dark/Light annotation toggle */}
       {stage !== STAGES.LOAD && (
         <section style={{ marginBottom: '20px' }}>
@@ -170,7 +206,7 @@ const Sidebar = ({
           <h3 style={{ margin: '0 0 10px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#8b949e' }}>
             Joints ({Object.keys(joints).length}/{SORTED_JOINTS.length})
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '180px', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: 'calc(100vh - 580px)', minHeight: '100px', overflowY: 'auto' }}>
             {SORTED_JOINTS.map((j, i) => (
               <button
                 key={j.id}
@@ -182,6 +218,7 @@ const Sidebar = ({
                   borderRadius: '4px', color: joints[j.id] ? '#3fb950' : '#8b949e',
                   cursor: 'pointer', fontFamily: 'inherit', fontSize: '11px',
                   textAlign: 'left', display: 'flex', justifyContent: 'space-between',
+                  flexShrink: 0,
                 }}
               >
                 <span>{j.name}</span>

@@ -1,11 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
 
-export const usePanZoom = (canvasRef, containerRef) => {
+export const usePanZoom = (canvasRef, containerRef, { imageRotation = 0, rotationCenter = null } = {}) => {
   const [viewTransform, setViewTransform] = useState({ scale: 1, offsetX: 0, offsetY: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [spacePressed, setSpacePressed] = useState(false);
   const [panStart, setPanStart] = useState(null);
   const [lastPanOffset, setLastPanOffset] = useState({ x: 0, y: 0 });
+
+  const rad = imageRotation * Math.PI / 180;
+  const cx = rotationCenter?.x || 0;
+  const cy = rotationCenter?.y || 0;
 
   const screenToImage = useCallback((screenX, screenY) => {
     const canvas = canvasRef.current;
@@ -15,18 +19,42 @@ export const usePanZoom = (canvasRef, containerRef) => {
     const canvasX = screenX - rect.left;
     const canvasY = screenY - rect.top;
 
-    const imageX = (canvasX - viewTransform.offsetX) / viewTransform.scale;
-    const imageY = (canvasY - viewTransform.offsetY) / viewTransform.scale;
+    // Undo pan+scale
+    let imageX = (canvasX - viewTransform.offsetX) / viewTransform.scale;
+    let imageY = (canvasY - viewTransform.offsetY) / viewTransform.scale;
+
+    // Undo rotation around rotationCenter
+    if (rad !== 0) {
+      const dx = imageX - cx;
+      const dy = imageY - cy;
+      const cosR = Math.cos(-rad);
+      const sinR = Math.sin(-rad);
+      imageX = cx + dx * cosR - dy * sinR;
+      imageY = cy + dx * sinR + dy * cosR;
+    }
 
     return { x: imageX, y: imageY };
-  }, [viewTransform, canvasRef]);
+  }, [viewTransform, canvasRef, rad, cx, cy]);
 
   const imageToScreen = useCallback((imageX, imageY) => {
+    let x = imageX;
+    let y = imageY;
+
+    // Apply rotation around rotationCenter
+    if (rad !== 0) {
+      const dx = x - cx;
+      const dy = y - cy;
+      const cosR = Math.cos(rad);
+      const sinR = Math.sin(rad);
+      x = cx + dx * cosR - dy * sinR;
+      y = cy + dx * sinR + dy * cosR;
+    }
+
     return {
-      x: imageX * viewTransform.scale + viewTransform.offsetX,
-      y: imageY * viewTransform.scale + viewTransform.offsetY
+      x: x * viewTransform.scale + viewTransform.offsetX,
+      y: y * viewTransform.scale + viewTransform.offsetY
     };
-  }, [viewTransform]);
+  }, [viewTransform, rad, cx, cy]);
 
   const zoomToROI = useCallback((roiRect) => {
     if (!containerRef.current || !roiRect) return;

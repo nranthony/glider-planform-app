@@ -9,6 +9,7 @@ export const useCanvasRenderer = ({
   annotationScale, stage, showMirrored, spacePressed, isPanning,
   colors, darkAnnotations,
   getAllJoints, imageToScreen, mirrorPoint, getMidlineHandleY,
+  imageRotation, rotationCenter,
 }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -28,6 +29,15 @@ export const useCanvasRenderer = ({
     ctx.save();
     ctx.translate(viewTransform.offsetX, viewTransform.offsetY);
     ctx.scale(viewTransform.scale, viewTransform.scale);
+
+    // Apply rotation around the rotation center
+    const rad = (imageRotation || 0) * Math.PI / 180;
+    if (rad !== 0 && rotationCenter) {
+      ctx.translate(rotationCenter.x, rotationCenter.y);
+      ctx.rotate(rad);
+      ctx.translate(-rotationCenter.x, -rotationCenter.y);
+    }
+
     ctx.drawImage(img, 0, 0);
 
     // Draw ROI dimming overlay
@@ -219,5 +229,5 @@ export const useCanvasRenderer = ({
       image, imageDimensions, viewTransform, roi, roiDrag, midlineX, draggingMidline,
       scaleBar, joints, currentJoint, draggingJoint, annotationScale, stage,
       getAllJoints, imageToScreen, mirrorPoint, showMirrored, spacePressed, isPanning,
-      colors, darkAnnotations, getMidlineHandleY]);
+      colors, darkAnnotations, getMidlineHandleY, imageRotation, rotationCenter]);
 };
